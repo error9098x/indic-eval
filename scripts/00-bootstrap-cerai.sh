@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Clone CeRAI at the pinned SHA, overlay our 7 patched files, render env
-# templates. Idempotent — re-runs reset the cloned tree to the pinned SHA
-# before re-overlaying.
+# Download CeRAI v2.0 release, overlay our 7 patched files, render env
+# templates. Idempotent — re-runs wipe and re-extract the CeRAI tree from
+# the release tarball so any in-place edits are reset.
 set -euo pipefail
 
-CERAI_REMOTE="https://github.com/cerai-iitm/AIEvaluationTool.git"
-CERAI_PINNED_SHA="190c1297d4c5178249b03255f3688b765128b4a5"
+# CeRAI v2.0 release — tag v2.0 maps to commit 190c1297d4c5178249b03255f3688b765128b4a5
+# (verified via api.github.com/repos/cerai-iitm/AIEvaluationTool/git/refs/tags/v2.0).
+CERAI_TARBALL="https://github.com/cerai-iitm/AIEvaluationTool/archive/refs/tags/v2.0.tar.gz"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CERAI_DIR="${REPO_ROOT}/third_party/AIEvaluationTool"
@@ -13,7 +14,8 @@ CERAI_DIR="${REPO_ROOT}/third_party/AIEvaluationTool"
 require() {
   command -v "$1" >/dev/null 2>&1 || { echo "missing: $1" >&2; exit 1; }
 }
-require git
+require curl
+require tar
 require docker
 require envsubst
 require python3
@@ -28,17 +30,12 @@ if [[ ! -f "${REPO_ROOT}/.env" ]]; then
   exit 1
 fi
 
-# Clone CeRAI if missing; otherwise reset to pinned SHA (re-run safety)
-if [[ ! -d "${CERAI_DIR}/.git" ]]; then
-  mkdir -p "$(dirname "${CERAI_DIR}")"
-  git clone --quiet "${CERAI_REMOTE}" "${CERAI_DIR}"
-fi
-cd "${CERAI_DIR}"
-git fetch --quiet origin
-git checkout --quiet --detach "${CERAI_PINNED_SHA}"
-git reset --hard --quiet "${CERAI_PINNED_SHA}"
+# Wipe + re-extract the CeRAI tree from the v2.0 tarball.
+rm -rf "${CERAI_DIR}"
+mkdir -p "${CERAI_DIR}"
+curl -fsSL "${CERAI_TARBALL}" | tar -xz --strip-components=1 -C "${CERAI_DIR}"
 
-# Overlay our 7 modified files onto the upstream checkout
+# Overlay our 7 modified files onto the extracted v2.0 tree
 cp -r "${REPO_ROOT}/cerai/src"/. "${CERAI_DIR}/src/"
 cp    "${REPO_ROOT}/cerai/docker-compose.yml" "${CERAI_DIR}/docker-compose.yml"
 
@@ -59,6 +56,6 @@ if [[ -f "${REPO_ROOT}/scripts/manifest_to_cerai_datapoints.py" ]]; then
 fi
 
 echo "CeRAI bootstrapped at ${CERAI_DIR}"
-echo "  pinned SHA:  ${CERAI_PINNED_SHA}"
+echo "  release:     v2.0 (commit 190c1297)"
 echo "  overlay:     7 files from cerai/"
 echo "  env files:   .env, strategy.env rendered from repo-root .env"
