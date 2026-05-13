@@ -11,6 +11,15 @@ from ollama import Client, AsyncClient
 from deepeval.models.base_model import DeepEvalBaseLLM
 from typing import Optional, List
 
+# PATCH (gates eval): OpenAI client used by CustomOpenAICompatModel for non-Ollama
+# judge providers (OpenRouter, OpenAI, Gemini-via-OpenRouter, etc.). Lazy-imported
+# so installs without openai still work for the existing Ollama path.
+try:
+    from openai import OpenAI as _OpenAIClient, AsyncOpenAI as _AsyncOpenAIClient
+except ImportError:
+    _OpenAIClient = None
+    _AsyncOpenAIClient = None
+
 logger = get_logger("utils_new")
 
 class FileLoader:
@@ -25,7 +34,11 @@ class FileLoader:
             logger.error(f"Could not find the .env file at path : {env_path}. Please make sure to create one and add the required environment variables.")
             exit(1)
         else:
-            load_dotenv(env_path)
+            # PATCH (gates eval): override=True so strategy/.env is authoritative
+            # for strategy-module env. Without override the docker-compose env_file
+            # (which often ships GPU_URL/OLLAMA_URL as empty placeholders) wins
+            # over the strategy-local .env that has real values.
+            load_dotenv(env_path, override=True)
     
     @staticmethod
     def _load_file_content(run_file_path:str, req_folder_path:str = "", file_name:str = "", **kwargs):
@@ -184,6 +197,86 @@ class CustomOllamaModel(DeepEvalBaseLLM):
             self.steps = {"Steps" : schema_.steps}
         return schema_
     
+    def get_model_name(self, *args, **kwargs):
+        return self.model_name
+
+
+class CustomOpenAICompatModel(DeepEvalBaseLLM):
+    """
+    PATCH (gates eval): DeepEval-compatible wrapper for any OpenAI-compatible
+    chat-completions endpoint (OpenAI, OpenRouter, Gemini-via-OpenRouter,
+    Together, Anyscale, ...). Mirrors CustomOllamaModel's interface contract so
+    LLMJudgeStrategy can swap providers via an env flag without other changes.
+
+    Why: CeRAI's llm_judge.py is Ollama-only via CustomOllamaModel. Users without
+    a local Ollama (or whose Ollama lacks the documented qwen3:32b — 32 B doesn't
+    fit on a 15 GB host) had no path to LLM-as-judge scoring. This wrapper lets
+    LLM_AS_JUDGE_PROVIDER=openrouter point at a paid-API judge.
+    """
+    def __init__(self, model_name: str, base_url: str, api_key: str, *args, **kwargs):
+        if _OpenAIClient is None:
+            raise RuntimeError("openai package not installed; run `pip install openai`")
+        self.model_name = model_name
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.client = _OpenAIClient(base_url=self.base_url, api_key=self.api_key)
+        self._async_client: Optional[object] = None
+        self.score_reason = None
+        self.steps = None
+
+    def _parse_json(self, raw_content: str, schema):
+        """Some providers wrap JSON in ```...``` fences or trailing prose; extract
+        the first top-level {...} block to be robust across OpenRouter routes."""
+        text = (raw_content or "").strip()
+        if text.startswith("```"):
+            text = text.strip("`")
+            text = text.split("\n", 1)[-1] if "\n" in text else text
+            if text.endswith("```"):
+                text = text[:-3]
+        start = text.find("{")
+        end = text.rfind("}")
+        if start >= 0 and end >= start:
+            text = text[start:end + 1]
+        raw = json.loads(text)
+        return schema(**raw)
+
+    def generate(self, input: str, *args, **kwargs):
+        schema_cls = kwargs.get("schema")
+        response = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": input}],
+            response_format={"type": "json_object"},
+            temperature=0,
+        )
+        schema_ = self._parse_json(response.choices[0].message.content, schema_cls)
+        if schema_cls is ReasonScore:
+            self.score_reason = {"Score": schema_.score, "Reason": schema_.reason}
+        if schema_cls is Steps:
+            self.steps = schema_.steps
+        return schema_
+
+    async def a_generate(self, input: str, *args, **kwargs):
+        schema_cls = kwargs.get("schema")
+        if self._async_client is None:
+            if _AsyncOpenAIClient is None:
+                raise RuntimeError("openai package not installed; run `pip install openai`")
+            self._async_client = _AsyncOpenAIClient(base_url=self.base_url, api_key=self.api_key)
+        response = await self._async_client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": input}],
+            response_format={"type": "json_object"},
+            temperature=0,
+        )
+        schema_ = self._parse_json(response.choices[0].message.content, schema_cls)
+        if schema_cls is ReasonScore:
+            self.score_reason = {"Score": schema_.score, "Reason": schema_.reason}
+        if schema_cls is Steps:
+            self.steps = {"Steps": schema_.steps}
+        return schema_
+
+    def load_model(self, *args, **kwargs):
+        return None
+
     def get_model_name(self, *args, **kwargs):
         return self.model_name
 
