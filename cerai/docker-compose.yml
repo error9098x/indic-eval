@@ -47,8 +47,15 @@ services:
       - "8000"
     env_file:
       - .env
+    environment:
+      # PATCH (gates eval): single-provider pin for OpenRouter routes
+      # (Gemma 4 26B-A4B via google-vertex/global only, no fallbacks).
+      OPENROUTER_PROVIDER_ORDER: Google
+      OPENROUTER_ALLOW_FALLBACKS: "false"
     volumes:
       - interface_manager_logs:/app/src/app/interface_manager/logs
+      - ./src/app/interface_manager:/app/src/app/interface_manager  # PATCH (gates eval): mount source so dev edits hot-reload (uvicorn --reload picks them up)
+      - ./src/lib/interface_manager:/app/src/lib/interface_manager:ro  # patched client.py
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs', timeout=3)"]
       interval: 20s
@@ -102,6 +109,15 @@ services:
     volumes:
       - interface_manager_logs:/app/src/app/interface_manager/logs:ro
       - ./config.json:/app/config.json
+      - ./strategy.env:/app/src/lib/strategy/.env:ro  # FileLoader._load_env_vars expects .env here (contains DEFAULT_VALUES_PATH + judge keys)
+      - ./data/sarvam_audit_datapoints.json:/app/data/sarvam_audit_datapoints.json:ro  # our 120-prompt manifest
+      - ./src/app/testcase_executor:/app/src/app/testcase_executor:ro  # PATCH (gates eval): mount patched executor (is_error_response fix)
+      - ./src/lib/interface_manager:/app/src/lib/interface_manager:ro  # patched client.py (auto-detect + sampling forward)
+      # PATCH (gates eval): mount patched strategy lib (CustomOpenAICompatModel
+      # judge dispatch + dotenv override=True). Cannot be :ro because
+      # strategy.env is mounted INSIDE this dir below.
+      - ./src/lib/strategy:/app/src/lib/strategy
+      - ./src/app/response_analyzer:/app/src/app/response_analyzer:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:7000/docs', timeout=3)"]
       interval: 20s
@@ -115,24 +131,27 @@ services:
       target: sarvam-ai
     container_name: aiet-sarvam-ai
     restart: unless-stopped
+    # PATCH (gates eval): re-gated behind 'sarvam' profile — none of the
+    # strategies our audit + benchmark uses (Gemini-judge / regex / bert-tiny
+    # / GLiNER / NLTK / language_similarity_gt etc.) require this service.
+    # ShieldGemma, sarvam-translate, sarvam-2b-v0.5 are not loaded by default.
+    # Opt in with `docker compose --profile sarvam up` if you need them.
     profiles: ["sarvam"]
     expose:
       - "16000"
     environment:
       - HF_HOME=/models
       - HUGGINGFACE_HUB_TOKEN=${HF_TOKEN}
-      - NVIDIA_VISIBLE_DEVICES=all
     env_file:
       - .env
     volumes:
       - sarvam_models:/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+      # PATCH (gates eval): mount patched main.py with --skip-* flags so the
+      # service can run safety-only on a CPU-bound host.
+      - ./src/app/sarvam_ai:/app/src/app/sarvam_ai
+    # PATCH (gates eval): override default CMD to skip translator + generator;
+    # only ShieldGemma loads (~5 GB CPU RAM instead of ~10–15 GB).
+    command: ["python", "main.py", "--skip-translator", "--skip-generator", "--verbosity", "4"]
 
   tdms-backend:
     build:
@@ -220,3 +239,4 @@ services:
 volumes:
   mariadb_data:
   interface_manager_logs:
+  sarvam_models:  # PATCH (gates eval): HF model cache for ShieldGemma
