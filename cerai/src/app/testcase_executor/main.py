@@ -24,13 +24,44 @@ from lib.data import Target, Run, RunDetail, Conversation
 from lib.utils import get_logger, get_logger_verbosity
 
 def is_error_response(response):
+    """Return True if the model's response indicates a known error condition.
+
+    PATCH (Gates eval): original v2.0 code assumed response was always a
+    list of {response: ...} dicts and did response[0]['response'].lower(),
+    which crashes with TypeError("string indices must be integers")
+    when the upstream returns a bare string. This patched version handles
+    both shapes (list-of-dicts, bare string) and is defensive about empty
+    inputs."""
     error_indicators = [
         "chat not found",
         "[error: max retries exceeded]",
         "[error: connection refused]",
-        "no response received"
+        "no response received",
     ]
-    return len(response) == 0 or any(indicator in response[0]['response'].lower() for indicator in error_indicators)
+    if not response:
+        return True
+
+    # Normalize the response to a text string
+    if isinstance(response, str):
+        text = response
+    elif isinstance(response, list) and response:
+        first = response[0]
+        if isinstance(first, dict):
+            # Either {"response": <str>} or {"response": {"content": <str>}}
+            inner = first.get("response", "")
+            if isinstance(inner, dict):
+                text = inner.get("content", "")
+            else:
+                text = inner if isinstance(inner, str) else ""
+        elif isinstance(first, str):
+            text = first
+        else:
+            text = ""
+    else:
+        text = ""
+
+    text_lower = text.lower() if isinstance(text, str) else ""
+    return any(indicator in text_lower for indicator in error_indicators)
 
 def main():
     """ Main function to handle command-line arguments and execute test cases.
@@ -480,7 +511,11 @@ def main():
                             db.add_or_update_testrun_detail(rundetail)
                         else:
                             conv.response_ts = datetime.now().isoformat()
-                            conv.agent_response = agent_response[0]['response']
+                            # PATCH (Gates eval): agent_response is already the extracted
+                            # string (line ~499 reads data.get('content', '')). Re-indexing
+                            # it as agent_response[0]['response'] crashes with
+                            # 'string indices must be integers'. Just store the string.
+                            conv.agent_response = agent_response
                             db.add_or_update_conversation(conversation=conv)
 
                             rundetail.status = "COMPLETED"
@@ -609,7 +644,9 @@ def main():
                             continue
 
                         conv.response_ts = datetime.now().isoformat()
-                        conv.agent_response = agent_response[0]['response']
+                        # PATCH (Gates eval): see line ~516 — agent_response is already
+                        # the extracted string. Avoid re-indexing it.
+                        conv.agent_response = agent_response
                         db.add_or_update_conversation(conversation=conv)
 
                         rundetail.status = "COMPLETED"
@@ -720,7 +757,9 @@ def main():
                             continue
 
                         conv.response_ts = datetime.now().isoformat()
-                        conv.agent_response = agent_response[0]['response']
+                        # PATCH (Gates eval): see line ~516 — agent_response is already
+                        # the extracted string. Avoid re-indexing it.
+                        conv.agent_response = agent_response
                         db.add_or_update_conversation(conversation=conv)
 
                         rundetail.status = "COMPLETED"
