@@ -1,0 +1,27 @@
+__pycache__/
+*.py[co]
+build/
+dist/
+wheels/
+*.egg-info/
+
+.venv/
+.python-version
+
+.env
+
+# Bootstrapped CeRAI checkout — recreated by scripts/00-bootstrap-cerai.sh
+third_party/
+
+# Bulk downloaded datasets (gitignored; manifest carries source_ref + source_url)
+datasets/
+
+# Regenerable run artefacts
+results/raw/
+results/*.log
+results/*.db
+results/*.sqlite
+results/_hf_upload_tmp/
+
+.ipynb_checkpoints/
+.DS_Store
