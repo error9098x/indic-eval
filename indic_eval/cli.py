@@ -9,6 +9,7 @@ Subcommands:
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Annotated
@@ -60,6 +61,24 @@ def _load_env_file(workspace: Path) -> None:
                     continue
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+def _ensure_cerai_bootstrapped(workspace: Path) -> None:
+    """Run scripts/00-bootstrap-cerai.sh before Track 2 fires.
+
+    The script is idempotent and short-circuits the expensive tarball download
+    when the CeRAI tree is already in place — so calling it every run costs <1 s
+    on the cached path while still re-rendering env files (catches updated keys
+    in .env) and regenerating the CeRAI-format datapoints from our manifest.
+    """
+    bootstrap = workspace / "scripts" / "00-bootstrap-cerai.sh"
+    if not bootstrap.exists():
+        console.print(f"[red]missing[/red] {bootstrap}")
+        raise typer.Exit(code=2)
+    result = subprocess.run([str(bootstrap)], cwd=workspace, check=False)
+    if result.returncode != 0:
+        console.print("[red]bootstrap failed[/red] — fix the error above and re-run.")
+        raise typer.Exit(code=result.returncode)
 
 
 def _wipe_target_outputs(workspace: Path, target_ids: list[str]) -> None:
@@ -181,6 +200,9 @@ def run(
 
     if not resume:
         _wipe_target_outputs(workspace, [t.id for t in cfg.targets])
+
+    if cfg.cerai.enabled:
+        _ensure_cerai_bootstrapped(workspace)
 
     from .runner import run_all
     try:

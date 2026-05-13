@@ -30,10 +30,18 @@ if [[ ! -f "${REPO_ROOT}/.env" ]]; then
   exit 1
 fi
 
-# Wipe + re-extract the CeRAI tree from the v2.0 tarball.
-rm -rf "${CERAI_DIR}"
-mkdir -p "${CERAI_DIR}"
-curl -fsSL "${CERAI_TARBALL}" | tar -xz --strip-components=1 -C "${CERAI_DIR}"
+# Tarball download is the expensive step (~50 MB) — skip it if the checkout
+# already exists. Use --force to re-download from scratch (e.g. if you've
+# corrupted the tree by hand or want to upgrade to a new pinned release).
+FORCE=0
+for arg in "$@"; do
+  case "$arg" in --force|-f) FORCE=1 ;; esac
+done
+if [[ "${FORCE}" -eq 1 || ! -f "${CERAI_DIR}/docker-compose.yml" ]]; then
+  rm -rf "${CERAI_DIR}"
+  mkdir -p "${CERAI_DIR}"
+  curl -fsSL "${CERAI_TARBALL}" | tar -xz --strip-components=1 -C "${CERAI_DIR}"
+fi
 
 # Overlay our 7 modified files onto the extracted v2.0 tree
 cp -r "${REPO_ROOT}/cerai/src"/. "${CERAI_DIR}/src/"
