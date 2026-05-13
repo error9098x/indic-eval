@@ -23,18 +23,32 @@ maps to exactly one primary CeRAI metric ID. Only Cat 3 sets LLM_AS_JUDGE to a
 real criteria string; the rest are "No" because their primary metrics are
 classifier-based or rule-based (no LLM judgment needed).
 
-Output: ../AIEvalTool_test/AIEvaluationTool/data/sarvam_audit_datapoints.json
-        (CeRAI loads any file referenced by config.json's files.testcases)
+Driven by --manifest and --out so the bootstrap script can route output into
+the freshly-extracted CeRAI tree under third_party/.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent.parent
-IN = HERE / "manifest" / "prompts_manifest.json"
-OUT = HERE.parent / "AIEvalTool_test" / "AIEvaluationTool" / "data" / "sarvam_audit_datapoints.json"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--manifest", type=Path,
+    default=REPO_ROOT / "manifest" / "prompts_manifest.json",
+    help="Path to prompts_manifest.json (default: repo manifest/).",
+)
+parser.add_argument(
+    "--out", type=Path,
+    default=REPO_ROOT / "third_party" / "AIEvaluationTool" / "data" / "sarvam_audit_datapoints.json",
+    help="Where to write the CeRAI-format datapoints JSON.",
+)
+args = parser.parse_args()
+IN = args.manifest
+OUT = args.out
 
 # Category → CeRAI primary metric ID (from data/plans.json + strategy_mapping)
 CATEGORY_METRIC = {
