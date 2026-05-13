@@ -119,6 +119,10 @@ def run(
         "--no-docker",
         help="Skip docker compose up/down — assume CeRAI stack is already running.",
     )] = False,
+    no_report: Annotated[bool, typer.Option(
+        "--no-report",
+        help="Skip auto-rendering site/index.html after the run completes.",
+    )] = False,
 ):
     """Run an end-to-end audit per the preset."""
     workspace = workspace or _default_workspace()
@@ -144,6 +148,17 @@ def run(
     except Exception as e:
         console.print(f"[red]error:[/red] {type(e).__name__}: {e}")
         raise typer.Exit(code=2)
+
+    if no_report:
+        return
+    findings = workspace / "results" / "findings.json"
+    output = workspace / "site" / "index.html"
+    if not findings.exists():
+        console.print(f"[yellow]skip report:[/yellow] no findings.json at {findings}")
+        return
+    from .report import render
+    render(findings, output)
+    console.print(f"[green]wrote[/green] {output}")
 
 
 @app.command()
