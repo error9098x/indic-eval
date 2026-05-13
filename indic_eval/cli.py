@@ -172,7 +172,7 @@ def run(
     )] = False,
     no_report: Annotated[bool, typer.Option(
         "--no-report",
-        help="Skip auto-rendering site/index.html after the run completes.",
+        help="Skip auto-rendering site/report.html after the run completes.",
     )] = False,
     resume: Annotated[bool, typer.Option(
         "--resume",
@@ -214,7 +214,7 @@ def run(
     if no_report:
         return
     findings = workspace / "results" / "findings.json"
-    output = workspace / "site" / "index.html"
+    output = workspace / "site" / "report.html"
     if not findings.exists():
         console.print(f"[yellow]skip report:[/yellow] no findings.json at {findings}")
         return
@@ -231,7 +231,7 @@ def report(
     )] = None,
     output: Annotated[Path, typer.Option(
         "--output", "-o",
-        help="HTML output path (default: site/index.html under workspace).",
+        help="HTML output path (default: site/report.html under workspace).",
     )] = None,
     workspace: Annotated[Path, typer.Option(
         "--workspace", "-w",
@@ -240,7 +240,7 @@ def report(
     """Render findings.json -> static HTML."""
     workspace = workspace or _default_workspace()
     findings = findings or workspace / "results" / "findings.json"
-    output = output or workspace / "site" / "index.html"
+    output = output or workspace / "site" / "report.html"
     if not findings.exists():
         console.print(f"[red]no findings.json at {findings}[/red] — run `indic-eval run` first")
         raise typer.Exit(code=2)

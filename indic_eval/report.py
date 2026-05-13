@@ -16,7 +16,7 @@ Inputs (auto-discovered from workspace/results/):
   - cerai_scores_<target>.jsonl (per target)  Track 2 raw rows
   - run-metadata.json                      provenance
 
-Output: site/index.html (single file).
+Output: site/report.html (single file).
 """
 from __future__ import annotations
 
