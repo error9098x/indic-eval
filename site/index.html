@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>indic-eval — Sarvam-30B Responsible-AI Audit</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+    background: #f5f3ee;
+    color: #1a1a1a;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 32px;
+    background: #fbfaf6;
+    border-left: 1px solid #d8d3c4;
+    border-right: 1px solid #d8d3c4;
+    min-height: 100vh;
+  }
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 10.5px;
+    color: #6b6356;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 18px;
+    letter-spacing: -0.01em;
+  }
+  p { margin: 0 0 14px; font-size: 15.5px; }
+  ul { padding-left: 22px; }
+  li { margin: 8px 0; }
+  a { color: #1a4a7a; text-decoration: none; border-bottom: 1px solid #cdd6df; }
+  a:hover { border-bottom-color: #1a4a7a; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: #f0eee5;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 13.5px;
+  }
+  .note {
+    margin-top: 32px;
+    padding: 14px 18px;
+    background: #f5f3ea;
+    border-left: 3px solid #b3a987;
+    font-size: 13.5px;
+    color: #3a3528;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="kicker">Gates Foundation AI Fellows · India 2026</div>
+  <h1>Sarvam-30B Responsible-AI Audit</h1>
+
+  <p>A pre-registered audit of <strong>Sarvam-30B</strong> — India's
+  sovereign-built reasoning LLM — across cross-lingual safety, maternal &amp;
+  child health factuality, agricultural advisory, demographic bias, and Indian
+  PII handling. Built on top of the
+  <a href="https://github.com/cerai-iitm/AIEvaluationTool">CeRAI AIEvaluationTool</a>
+  with seven patches for reasoning-model support.</p>
+
+  <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:0.08em;margin-top:28px">Artefacts</h2>
+  <ul>
+    <li><a href="report.html">Auto-generated test-suite report</a>
+        — five chart-driven category sections + nine data tables, rendered
+        from <code>results/findings.json</code> + <code>cerai_scores_*.jsonl</code>.</li>
+    <li><a href="https://huggingface.co/datasets/procodec/sarvam-30b-audit-prompts">HuggingFace dataset</a>
+        — 120-prompt manifest with full per-prompt provenance, viewer + API access.</li>
+    <li><a href="https://github.com/error9098x/indic-eval">Source repository</a>
+        — <code>indic-eval</code> CLI, seven CeRAI patches, bootstrap script, this site.</li>
+  </ul>
+
+  <div class="note">
+    The hand-crafted findings paper (this homepage) is a placeholder until the
+    Nerfies-styled write-up lands. The auto-generated <code>report.html</code>
+    above is complete and reflects the current audit state.
+  </div>
+
+</div>
+</body>
+</html>
