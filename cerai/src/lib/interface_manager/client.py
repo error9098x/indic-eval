@@ -105,15 +105,28 @@ class InterfaceManagerClient:
 
         # Unified API flow
         if self.application_type == "API":
+            api_context = {
+                "provider": self._auto_detect_provider(),
+                "agent_name": self.agent_name,
+                "base_url": self.local_llm_base_url,
+                "run_mode": self.run_mode,
+            }
+            # PATCH (Gates eval): forward sampling + reasoning-model controls
+            # from server config to the interface_manager service.
+            extra_keys = (
+                "api_key", "temperature", "max_tokens", "top_p",
+                "seed", "n", "reasoning_effort", "wiki_grounding",
+                "system_prompt",
+            )
+            for k in extra_keys:
+                v = getattr(self, k, None)
+                if v is not None:
+                    api_context[k] = v
+
             payload = {
                 "chat_id": chat_id,
                 "prompt_list": prompt_list,
-                "api_context": {
-                    "provider": self._auto_detect_provider(),
-                    "agent_name": self.agent_name,
-                    "base_url": self.local_llm_base_url,
-                    "run_mode": self.run_mode,
-                }
+                "api_context": api_context,
             }
             return self._post("chat", json=payload)
 
@@ -137,8 +150,17 @@ class InterfaceManagerClient:
                 "Please configure target.agent_name in config.json."
             )
 
+        # PATCH (Gates eval): explicit provider override from config wins
+        explicit = getattr(self, "provider_override", None)
+        if explicit:
+            return explicit.upper()
+
         # If application_url is local → LOCAL provider
-        if self.local_llm_base_url.startswith("http://localhost") or self.local_llm_base_url.startswith("http://127.0.0.1") or self.local_llm_base_url.startswith("http://host.docker.internal"):
+        if self.local_llm_base_url and (
+            self.local_llm_base_url.startswith("http://localhost")
+            or self.local_llm_base_url.startswith("http://127.0.0.1")
+            or self.local_llm_base_url.startswith("http://host.docker.internal")
+        ):
             self.logger.info("Detected LOCAL provider via application_url")
             return "LOCAL"
 
@@ -149,6 +171,17 @@ class InterfaceManagerClient:
 
         if model.startswith("gpt") or model.startswith("o"):
             return "OPENAI"
+
+        # PATCH (Gates eval): treat any OpenAI-compatible non-OpenAI/non-Gemini
+        # endpoint as LOCAL (Sarvam, Groq, OpenRouter, etc.). Triggered when
+        # base_url is provided and is not us-east-1 OpenAI/Google.
+        if self.local_llm_base_url:
+            self.logger.info(
+                "Defaulting to LOCAL provider for non-OpenAI/non-Gemini "
+                "OpenAI-compatible endpoint | model=%s base_url=%s",
+                self.agent_name, self.local_llm_base_url,
+            )
+            return "LOCAL"
 
         raise RuntimeError(
             f"Unable to determine provider for model '{self.agent_name}'. "
@@ -253,6 +286,9 @@ class InterfaceManagerClient:
         """
         Pull server config and bind relevant fields to the client runtime.
         Assumes flat config (no 'target' nesting).
+
+        PATCH (Gates eval): Also binds sampling params + reasoning-model controls
+        so the server-side config drives behavior end-to-end.
         """
         cfg = self.get_config()
 
@@ -268,10 +304,26 @@ class InterfaceManagerClient:
         if app_url:
             self.local_llm_base_url = app_url.rstrip("/")
 
+        # PATCH (Gates eval): bind sampling + reasoning-model controls.
+        # These are forwarded into the api_context payload by .chat().
+        sampling = cfg.get("sampling", {}) or {}
+        self.provider_override = cfg.get("provider")           # explicit provider override
+        self.api_key = cfg.get("api_key") or sampling.get("api_key")
+        self.temperature = sampling.get("temperature")
+        self.max_tokens = sampling.get("max_tokens")
+        self.top_p = sampling.get("top_p")
+        self.seed = sampling.get("seed")
+        self.n = sampling.get("n")
+        self.reasoning_effort = sampling.get("reasoning_effort")
+        self.wiki_grounding = sampling.get("wiki_grounding")
+        self.system_prompt = sampling.get("system_prompt")
+
         self.logger.debug(
             "Applied server config → "
             f"agent_name={self.agent_name}, "
-            f"local_llm_base_url={self.local_llm_base_url}"
+            f"local_llm_base_url={self.local_llm_base_url}, "
+            f"sampling=temp={self.temperature} max_tok={self.max_tokens} "
+            f"seed={self.seed} n={self.n} reasoning_effort={self.reasoning_effort}"
         )
 
     def get_config(self) -> dict[str, Any]:
