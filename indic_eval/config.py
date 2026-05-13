@@ -52,6 +52,7 @@ class Judge(BaseModel):
     # thinking tokens from the response.  None on either field omits the param.
     reasoning_effort: str | None = None
     reasoning_exclude: bool = True
+    provider_routing: ProviderRouting | None = None
 
 
 class OurTrack(BaseModel):

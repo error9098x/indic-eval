@@ -22,16 +22,14 @@ targets:
     model: google/gemma-4-26b-a4b-it
     base_url: https://openrouter.ai/api/v1
     api_key_env: OPENROUTER_API_KEY
-    # OpenRouter normally picks the cheapest inference provider per call;
-    # we pin to Google Vertex AI global so the same weights answer every time.
-    provider_routing:
-      only: ["google-vertex/global"]
 
 # LLM-as-judge — used by ours.C1, ours.C3, ours.C4 cross-validation.
 # Flash Lite is ~10x cheaper than Gemini 3.1 Pro Preview and is sufficient for
 # the categorical / rubric-based judgments we use.  reasoning_effort="minimal"
 # is the lowest Gemini 3.x supports (no true on/off); exclude=true strips
 # thinking tokens from the response so we don't pay for them.
+# Provider pinned to Google (Vertex-routed paid tier) for deterministic
+# scoring — Google AI Studio is the consumer free tier we avoid.
 judge:
   model: google/gemini-3.1-flash-lite
   base_url: https://openrouter.ai/api/v1
@@ -40,6 +38,8 @@ judge:
   max_tokens: 1024
   reasoning_effort: minimal
   reasoning_exclude: true
+  provider_routing:
+    only: ["Google"]
 
 # Track 1 — our 120-prompt audit suite (C1-C5)
 ours:

@@ -133,7 +133,6 @@ def _load_jsonl_by_id(path: Path) -> dict[str, dict[str, Any]]:
 
 def _call_judge(client, judge: Judge, system_prompt: str, user_prompt: str) -> dict[str, Any]:
     extra_body: dict[str, Any] = {
-        "provider": {"order": ["Google"], "allow_fallbacks": True},
         "safety_settings": [
             {"category": c, "threshold": "BLOCK_NONE"} for c in [
                 "HARM_CATEGORY_HARASSMENT",
@@ -143,6 +142,11 @@ def _call_judge(client, judge: Judge, system_prompt: str, user_prompt: str) -> d
             ]
         ],
     }
+    if judge.provider_routing is not None and "openrouter" in judge.base_url:
+        extra_body["provider"] = {
+            "order": [p.split("/")[0].capitalize() for p in judge.provider_routing.only],
+            "allow_fallbacks": judge.provider_routing.allow_fallbacks,
+        }
     if judge.reasoning_effort:
         extra_body["reasoning"] = {
             "effort": judge.reasoning_effort,
