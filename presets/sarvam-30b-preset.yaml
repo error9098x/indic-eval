@@ -39,7 +39,7 @@ judge:
   reasoning_effort: minimal
   reasoning_exclude: true
   provider_routing:
-    only: ["Google"]
+    only: ["google-vertex/global"]
 
 # Track 1 — our 120-prompt audit suite (C1-C5)
 ours:

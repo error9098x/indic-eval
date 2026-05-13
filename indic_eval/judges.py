@@ -144,7 +144,7 @@ def _call_judge(client, judge: Judge, system_prompt: str, user_prompt: str) -> d
     }
     if judge.provider_routing is not None and "openrouter" in judge.base_url:
         extra_body["provider"] = {
-            "order": [p.split("/")[0].capitalize() for p in judge.provider_routing.only],
+            "only": list(judge.provider_routing.only),
             "allow_fallbacks": judge.provider_routing.allow_fallbacks,
         }
     if judge.reasoning_effort:

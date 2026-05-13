@@ -37,10 +37,10 @@ def _extra_body(target: Target, sampling: Sampling) -> dict[str, Any]:
     # Sarvam-style reasoning effort
     if sampling.reasoning_effort and "sarvam" in target.base_url:
         extra["reasoning_effort"] = sampling.reasoning_effort
-    # OpenRouter-style provider pin
+    # OpenRouter-style provider pin — slug from `tag` field on /models/<id>/endpoints
     if target.provider_routing is not None and "openrouter" in target.base_url:
         extra["provider"] = {
-            "order": [p.split("/")[0].capitalize() for p in target.provider_routing.only],
+            "only": list(target.provider_routing.only),
             "allow_fallbacks": target.provider_routing.allow_fallbacks,
         }
     return extra
