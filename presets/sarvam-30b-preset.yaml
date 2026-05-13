@@ -1,0 +1,89 @@
+# indic-eval preset — reference run that produced the published Sarvam-30B audit.
+# Reproduce: indic-eval run --preset presets/sarvam-30b-preset.yaml
+
+name: sarvam-30b-may-2026
+audit_date: 2026-05-13
+
+# Sampling — applied to every target call
+sampling:
+  temperature: 0
+  seed: 42
+  max_tokens: 2048
+  reasoning_effort: low      # ignored by models that don't support it
+
+# Models under test.  Each target gets called once per prompt.
+targets:
+  - id: sarvam-30b
+    model: sarvam-30b
+    base_url: https://api.sarvam.ai/v1
+    api_key_env: SARVAM_API_KEY
+
+  - id: gemma-4-26b-a4b
+    model: google/gemma-4-26b-a4b-it
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    # OpenRouter normally picks the cheapest inference provider per call;
+    # we pin to Google Vertex AI global so the same weights answer every time.
+    provider_routing:
+      only: ["google-vertex/global"]
+
+# LLM-as-judge — used by ours.C1, ours.C3, ours.C4 cross-validation.
+# Flash Lite is ~10x cheaper than Gemini 3.1 Pro Preview and is sufficient for
+# the categorical / rubric-based judgments we use.  reasoning_effort="minimal"
+# is the lowest Gemini 3.x supports (no true on/off); exclude=true strips
+# thinking tokens from the response so we don't pay for them.
+judge:
+  model: google/gemini-3.1-flash-lite
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY
+  temperature: 0
+  max_tokens: 1024
+  reasoning_effort: minimal
+  reasoning_exclude: true
+
+# Track 1 — our 120-prompt audit suite (C1-C5)
+ours:
+  enabled: true
+  manifest: manifest/prompts_manifest.json
+  # null = run every prompt in that category.  Set an integer to subsample.
+  limit_per_category:
+    C1_cross_lingual_safety: null    # full = 32
+    C2_maternal_health: null         # full = 20
+    C3_agricultural_advisory: null   # full = 20
+    C4_demographic_bias: null        # full = 28
+    C5_indian_pii: null              # full = 20
+
+# Track 2 — CeRAI's shipped test plans.
+# Each plan lists the metrics this preset runs, by CeRAI metric_id.
+# `id` must match CeRAI's Metrics table; `label` is display-only.
+# The 4 omitted metrics (Bias_Assessment, Robustness, Transparency, Fairness)
+# were dropped because CeRAI's strategies for them fail silently in this
+# environment — see audit notes in the final report.
+cerai:
+  enabled: true
+  plans:
+    T1_Responsible_AI:
+      enabled: true
+      limit_per_metric: 33      # cap per metric (33 = full)
+      metrics:
+        - {id: 1, label: Inclusivity}
+        - {id: 3, label: Explainability}
+        - {id: 4, label: Cultural_Sensitivity}
+        - {id: 7, label: Truthfulness}
+    T3_Guardrails_and_Safety:
+      enabled: true
+      limit_per_metric: 33
+      metrics:
+        - {id: 21, label: Response_out_of_scope}
+        # metric_id 25 (Detection_of_Harmful_Inputs) dropped — its scores
+        # are raw HF-classifier probabilities and don't fit a clean 0-1
+        # readout consistent with the other metrics.
+    T4_Language_Support:
+      enabled: true
+      limit_per_metric: 33
+      metrics:
+        - {id: 30, label: Language_Coverage}
+        - {id: 31, label: Multi_Indic_in_one_context}
+        - {id: 33, label: Accuracy_per_Language}
+  # limit_per_metric: 1   → smoke (one prompt per metric)
+  # limit_per_metric: null → full coverage (every prompt CeRAI ships)
