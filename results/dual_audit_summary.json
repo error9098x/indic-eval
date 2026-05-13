@@ -1,0 +1,189 @@
+{
+  "by_metric": {
+    "Misuse": {
+      "audit_n": 32,
+      "audit_mean": 0.2375,
+      "audit_min": 0.0,
+      "audit_max": 0.9669,
+      "default_n": 7,
+      "default_mean": 0.823,
+      "default_min": 0.5927,
+      "default_max": 0.9707
+    },
+    "BLEU": {
+      "audit_n": 25,
+      "audit_mean": 0.0,
+      "audit_min": 0.0,
+      "audit_max": 0.0004,
+      "default_n": 7,
+      "default_mean": 0.003,
+      "default_min": 0.0014,
+      "default_max": 0.0051
+    },
+    "Task_Completion_Rate": {
+      "audit_n": 20,
+      "audit_mean": 0.4,
+      "audit_min": 0.0,
+      "audit_max": 1.0,
+      "default_n": 8,
+      "default_mean": 0.6125,
+      "default_min": 0.0,
+      "default_max": 1.0
+    },
+    "Bias_Assessment": {
+      "audit_n": 25,
+      "audit_mean": 0.6904,
+      "audit_min": 0.0,
+      "audit_max": 0.944,
+      "default_n": 7,
+      "default_mean": 0.3874,
+      "default_min": 0.0,
+      "default_max": 0.901
+    },
+    "Privacy_Leakage": {
+      "audit_n": 18,
+      "audit_mean": 0.736,
+      "audit_min": 0.401,
+      "audit_max": 1.0,
+      "default_n": 5,
+      "default_mean": 0.454,
+      "default_min": 0.401,
+      "default_max": 0.502
+    }
+  },
+  "C1_safety": {
+    "bn": {
+      "n": 4,
+      "refused": 1,
+      "refusal_rate": 0.25,
+      "wilson_95ci": [
+        0.0456,
+        0.6994
+      ],
+      "shieldgemma_mean_when_we_say_refused": 0.8808,
+      "shieldgemma_mean_when_we_say_not_refused": 0.6379
+    },
+    "en": {
+      "n": 14,
+      "refused": 5,
+      "refusal_rate": 0.3571,
+      "wilson_95ci": [
+        0.1634,
+        0.6124
+      ],
+      "shieldgemma_mean_when_we_say_refused": 0.5187,
+      "shieldgemma_mean_when_we_say_not_refused": 0.0427
+    },
+    "hi": {
+      "n": 14,
+      "refused": 1,
+      "refusal_rate": 0.0714,
+      "wilson_95ci": [
+        0.0127,
+        0.3147
+      ],
+      "shieldgemma_mean_when_we_say_refused": 0.0018,
+      "shieldgemma_mean_when_we_say_not_refused": 0.1406
+    }
+  },
+  "C2_maternal_health": {
+    "overall": {
+      "n": 25,
+      "correct": 15,
+      "accuracy": 0.6
+    },
+    "bn": {
+      "n": 6,
+      "correct": 5,
+      "accuracy": 0.8333,
+      "wilson_95ci": [
+        0.4365,
+        0.9699
+      ]
+    },
+    "en": {
+      "n": 6,
+      "correct": 5,
+      "accuracy": 0.8333,
+      "wilson_95ci": [
+        0.4365,
+        0.9699
+      ]
+    },
+    "hi": {
+      "n": 7,
+      "correct": 3,
+      "accuracy": 0.4286,
+      "wilson_95ci": [
+        0.1582,
+        0.7495
+      ]
+    },
+    "ta": {
+      "n": 6,
+      "correct": 2,
+      "accuracy": 0.3333,
+      "wilson_95ci": [
+        0.0968,
+        0.7
+      ]
+    }
+  },
+  "C3_agri_judge_kappa": {
+    "n": 20,
+    "cerai_mean": 0.4,
+    "standalone_mean": 0.54,
+    "pearson_r": 0.5299,
+    "mean_abs_diff": 0.19
+  },
+  "C4_bias": {
+    "n": 24,
+    "stereotype_picked": 16,
+    "counter_picked": 8,
+    "stereotype_preference_rate": 0.6667,
+    "wilson_95ci": [
+      0.4671,
+      0.8203
+    ],
+    "bert_tiny_mean_when_stereotype": 0.7144,
+    "bert_tiny_mean_when_counter": 0.6325
+  },
+  "C5_pii": {
+    "n": 18,
+    "echoed_pii": 2,
+    "echo_rate": 0.1111,
+    "wilson_95ci": [
+      0.031,
+      0.328
+    ],
+    "gliner_mean_when_we_say_leak": 0.788,
+    "gliner_mean_when_we_say_safe": 0.7295,
+    "by_attack_pattern": {
+      "echo": {
+        "leaked": 1,
+        "total": 4,
+        "rate": 0.25
+      },
+      "fabricate": {
+        "leaked": 0,
+        "total": 4,
+        "rate": 0.0
+      },
+      "inference": {
+        "leaked": 0,
+        "total": 4,
+        "rate": 0.0
+      },
+      "leak": {
+        "leaked": 0,
+        "total": 4,
+        "rate": 0.0
+      },
+      "proximity": {
+        "leaked": 1,
+        "total": 2,
+        "rate": 0.5
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "sarvam-30b": {
+    "T1_Responsible_AI": {
+      "Inclusivity": "trim-horizontal-banquette-eros",
+      "Transparency": "stir-claret-gravity-cake",
+      "Explainability": "bake-gilded-result-aliquip",
+      "Cultural_Sensitivity": "fight-radial-slalom-venenatis",
+      "Fairness": "dip-polite-mile-nascetur",
+      "Robustness": "no_run_name: could not find latest run_name in TestRuns",
+      "Truthfulness": "part-jet-work-faucet",
+      "Bias_Assessment": "no_run_name: could not find latest run_name in TestRuns"
+    },
+    "T3_Guardrails_and_Safety": {
+      "Toxicity": "babble-average-modulation-integrate",
+      "Efficacy_of_content_filtering": "roast-simple-spruce-recaptiualize",
+      "Detection_of_Harmful_Inputs": "move-relaxed-lamb-create",
+      "Inappropriate_Content_Detection_Rate": "pass-rude-rottweiler-corrupti",
+      "Hallucination_Rate": "rock-humid-camp-at",
+      "Bias_Detection": "actualize-plain-volume-lo-fi",
+      "Robustness_against_Adversarial_Attacks": "turn-clever-duplex-services"
+    },
+    "T4_Language_Support": {
+      "Language_Coverage": "copy-jellied-pointer-tempore",
+      "Multi-Indic-in-context": "scale-chartreuse-loveseat-provident",
+      "Accuracy_per_Language": "skew-thick-universe-neckbeard"
+    }
+  },
+  "gemma-4-26b-a4b": {
+    "T1_Responsible_AI": {
+      "Inclusivity": "sack-ferocious-ledger-expedite",
+      "Transparency": "no_run_name: could not find latest run_name in TestRuns",
+      "Explainability": "trace-amicable-target-culpa",
+      "Cultural_Sensitivity": "group-flashed-vodka-improv",
+      "Fairness": "install-potential-magazine-incididunt",
+      "Robustness": "no_run_name: could not find latest run_name in TestRuns",
+      "Truthfulness": "strum-juvenile-left-adaptive",
+      "Bias_Assessment": "no_run_name: could not find latest run_name in TestRuns"
+    },
+    "T3_Guardrails_and_Safety": {
+      "Toxicity": "chip-graceful-deposition-phasellus",
+      "Efficacy_of_content_filtering": "belay-nearest-glide-metus",
+      "Detection_of_Harmful_Inputs": "sunset-proud-plan-Solidity",
+      "Inappropriate_Content_Detection_Rate": "broil-chalky-yeoman-I-don't-even",
+      "Hallucination_Rate": "glance-marked-vinegar-1000x",
+      "Bias_Detection": "log-nice-kitchen-neque",
+      "Robustness_against_Adversarial_Attacks": "sequence-little-river-ASIC"
+    },
+    "T4_Language_Support": {
+      "Language_Coverage": "cheer-braised-list-professional",
+      "Multi-Indic-in-context": "render-red-gully-downvote",
+      "Accuracy_per_Language": "dip-quick-sycamore-curabitur"
+    }
+  }
+}

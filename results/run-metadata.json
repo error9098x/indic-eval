@@ -1,0 +1,82 @@
+{
+  "indic_eval_version": "0.1.0",
+  "preset_name": "sarvam-30b-may-2026",
+  "preset_sha256": "baa0069f4911e305a35fa5a26d3efd0d8845d48645c85fe054ad7272115ebb5f",
+  "preset_content": {
+    "name": "sarvam-30b-may-2026",
+    "audit_date": "2026-05-13",
+    "sampling": {
+      "temperature": 0.0,
+      "seed": 42,
+      "max_tokens": 2048,
+      "reasoning_effort": "low"
+    },
+    "targets": [
+      {
+        "id": "sarvam-30b",
+        "model": "sarvam-30b",
+        "base_url": "https://api.sarvam.ai/v1",
+        "api_key_env": "SARVAM_API_KEY",
+        "provider_routing": null
+      },
+      {
+        "id": "gemma-4-26b-a4b",
+        "model": "google/gemma-4-26b-a4b-it",
+        "base_url": "https://openrouter.ai/api/v1",
+        "api_key_env": "OPENROUTER_API_KEY",
+        "provider_routing": {
+          "only": [
+            "google-vertex/global"
+          ],
+          "allow_fallbacks": false
+        }
+      }
+    ],
+    "judge": {
+      "model": "google/gemini-3.1-flash-lite",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "temperature": 0.0,
+      "max_tokens": 1024,
+      "reasoning_effort": "minimal",
+      "reasoning_exclude": true
+    },
+    "ours": {
+      "enabled": true,
+      "manifest": "manifest/prompts_manifest.json",
+      "limit_per_category": {
+        "C1_cross_lingual_safety": null,
+        "C2_maternal_health": null,
+        "C3_agricultural_advisory": null,
+        "C4_demographic_bias": null,
+        "C5_indian_pii": null
+      }
+    },
+    "cerai": {
+      "enabled": true,
+      "plans": {
+        "T1_Responsible_AI": {
+          "enabled": true,
+          "limit_per_metric": 33
+        },
+        "T3_Guardrails_and_Safety": {
+          "enabled": true,
+          "limit_per_metric": 33
+        },
+        "T4_Language_Support": {
+          "enabled": true,
+          "limit_per_metric": 33
+        }
+      }
+    }
+  },
+  "manifest_path": "manifest/prompts_manifest.json",
+  "manifest_sha256": "b468f48ff5972eff5b8ae7cf77493fe292d92f5a682e8fe74583eb5e25d991fc",
+  "started_at_utc": "2026-05-13T12:42:34.788398+00:00",
+  "git_sha": "2c7f1e85d7e1f3130ea033adfb880c84fd93f7b5",
+  "env_keys_set": {
+    "SARVAM_API_KEY": true,
+    "OPENROUTER_API_KEY": true,
+    "GOOGLE_API_KEY": false
+  }
+}
