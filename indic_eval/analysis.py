@@ -33,37 +33,53 @@ def _jl_by_id(path: Path) -> dict[str, dict[str, Any]]:
 
 
 def _count_errors(path: Path) -> int:
-    """Count rows containing an `error` field (transient API failures, etc)."""
+    """Count rows containing an `error` field, EXCLUDING ones whose `id` was
+    later resolved by a successful row in the same file. The JSONL is
+    append-only, so a successful retry doesn't remove the original error row —
+    but for run-health purposes we only care about errors that didn't recover.
+    """
     if not path.exists():
         return 0
-    n = 0
-    for line in path.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            if "error" in json.loads(line):
-                n += 1
-        except json.JSONDecodeError:
-            n += 1
-    return n
-
-
-def _count_errors_for_target(path: Path, target_id: str) -> int:
-    """Same as _count_errors but filters to a target_id (for judge files)."""
-    if not path.exists():
-        return 0
-    n = 0
+    success_ids: set[str] = set()
+    error_records: list[str | None] = []
     for line in path.read_text().splitlines():
         if not line.strip():
             continue
         try:
             r = json.loads(line)
         except json.JSONDecodeError:
-            n += 1
+            error_records.append(None)
             continue
-        if "error" in r and r.get("target") == target_id:
-            n += 1
-    return n
+        rid = r.get("id")
+        if "error" in r:
+            error_records.append(rid)
+        elif rid:
+            success_ids.add(rid)
+    return sum(1 for rid in error_records if rid not in success_ids)
+
+
+def _count_errors_for_target(path: Path, target_id: str) -> int:
+    """As _count_errors, scoped to one target_id (for judge JSONLs)."""
+    if not path.exists():
+        return 0
+    success_keys: set[tuple[str, str]] = set()
+    error_keys: list[tuple[str, str] | None] = []
+    for line in path.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            error_keys.append(None)
+            continue
+        if r.get("target") != target_id:
+            continue
+        pid = r.get("prompt_id") or r.get("id")
+        if "error" in r:
+            error_keys.append((target_id, pid))
+        elif pid:
+            success_keys.add((target_id, pid))
+    return sum(1 for k in error_keys if k not in success_keys)
 
 
 def _jl_by_pair(path: Path, k1: str = "target", k2: str = "prompt_id") -> dict[tuple[str, str], dict]:
