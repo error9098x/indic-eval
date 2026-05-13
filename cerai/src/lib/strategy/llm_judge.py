@@ -2,7 +2,7 @@ import warnings
 import os
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from deepeval.metrics import GEval
-from .utils_new import FileLoader, CustomOllamaModel
+from .utils_new import FileLoader, CustomOllamaModel, CustomOpenAICompatModel
 from lib.data import TestCase, Conversation
 from .strategy_base import Strategy
 from .logger import get_logger
@@ -16,21 +16,43 @@ dflt_vals = FileLoader._to_dot_dict(__file__, os.getenv("DEFAULT_VALUES_PATH"), 
 class LLMJudgeStrategy(Strategy):
     def __init__(self, name: str = "llm_judge", **kwargs) -> None:
         super().__init__(name=name)
-        
+
         self.metric_name = kwargs.get("metric_name", dflt_vals.metric_name)
-        self.model_names = dflt_vals.model_names #os.getenv("LLM_AS_JUDGE_MODEL")
-        self.base_url = os.getenv("OLLAMA_URL")
-        self.models = [CustomOllamaModel(model_name=model_name, url=self.base_url) for model_name in self.model_names]
         self.eval_type = name.split("_")[-1] if len(name.split("_")) > 2 else dflt_vals.eval_type
-        
         self.judge_prompt = dflt_vals.judge_prompt
         self.system_prompt = dflt_vals.sys_prompt
         self.prompt = dflt_vals.prompt
 
+        # PATCH (gates eval): provider dispatch. Defaults to Ollama (the
+        # original CeRAI path). Set LLM_AS_JUDGE_PROVIDER=openrouter (or any
+        # OpenAI-compatible alias) to route the judge through OpenRouter /
+        # OpenAI / Gemini-via-OpenRouter without standing up an Ollama host.
+        provider = os.getenv("LLM_AS_JUDGE_PROVIDER", "ollama").lower()
+        if provider in ("openrouter", "openai", "openai-compat", "openai_compat"):
+            base_url = os.getenv("LLM_AS_JUDGE_BASE_URL", "https://openrouter.ai/api/v1")
+            api_key_env = os.getenv("LLM_AS_JUDGE_API_KEY_ENV", "OPENROUTER_API_KEY")
+            api_key = os.getenv(api_key_env, "")
+            # Allow a single-model override via LLM_AS_JUDGE_MODEL; otherwise
+            # honor the default list from data/defaults.json.
+            single_model = os.getenv("LLM_AS_JUDGE_MODEL")
+            model_names = [single_model] if single_model else dflt_vals.model_names
+            self.model_names = model_names
+            self.models = [
+                CustomOpenAICompatModel(model_name=m, base_url=base_url, api_key=api_key)
+                for m in model_names
+            ]
+            logger.info(f"LLM-as-judge using OpenAI-compatible endpoint: {base_url} model={model_names}")
+            if not api_key:
+                logger.warning(f"{api_key_env} not set; OpenAI-compatible judge will fail")
+        else:
+            self.model_names = dflt_vals.model_names
+            self.base_url = os.getenv("OLLAMA_URL")
+            self.models = [CustomOllamaModel(model_name=model_name, url=self.base_url) for model_name in self.model_names]
+            if not self.base_url:
+                logger.warning("OLLAMA_URL is not set in environment.")
+
         if not self.model_names:
             logger.warning("LLM_AS_JUDGE_MODEL is not set in default values.")
-        if not self.base_url:
-            logger.warning("OLLAMA_URL is not set in environment.")
 
     def evaluate(self, testcase:TestCase, conversation:Conversation):
         logger.debug("Evaluating agent response using LLM judge...")
