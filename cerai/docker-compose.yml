@@ -135,7 +135,8 @@ services:
     # strategies our audit + benchmark uses (Gemini-judge / regex / bert-tiny
     # / GLiNER / NLTK / language_similarity_gt etc.) require this service.
     # ShieldGemma, sarvam-translate, sarvam-2b-v0.5 are not loaded by default.
-    # Opt in with `docker compose --profile sarvam up` if you need them.
+    # Opt in via `docker compose --profile sarvam up` when those services
+    # are needed (e.g. evaluating ShieldGemma-based metrics directly).
     profiles: ["sarvam"]
     expose:
       - "16000"

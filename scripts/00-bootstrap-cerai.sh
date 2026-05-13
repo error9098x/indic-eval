@@ -30,9 +30,9 @@ if [[ ! -f "${REPO_ROOT}/.env" ]]; then
   exit 1
 fi
 
-# Tarball download is the expensive step (~50 MB) — skip it if the checkout
-# already exists. Use --force to re-download from scratch (e.g. if you've
-# corrupted the tree by hand or want to upgrade to a new pinned release).
+# Tarball download is the expensive step (~50 MB). Skip it when the checkout
+# already exists; --force re-downloads from scratch (e.g. after a corrupted
+# extract or when bumping the pinned release).
 FORCE=0
 for arg in "$@"; do
   case "$arg" in --force|-f) FORCE=1 ;; esac

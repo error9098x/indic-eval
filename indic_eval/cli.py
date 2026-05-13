@@ -124,8 +124,8 @@ def _build_preset(
 
     `--smoke` is a HARD RESET (every limit collapses to 1) and runs LAST among
     the limit-touching flags, so `--set ours.limit_per_category.X=null --smoke`
-    leaves X at 1, not null.  If you want to override a smoke value, drop
-    --smoke and set every limit explicitly via --set.
+    leaves X at 1, not null. To override a smoke value, drop --smoke and set
+    every limit explicitly via --set.
     """
     preset = load_preset(preset_path)
     if overrides:

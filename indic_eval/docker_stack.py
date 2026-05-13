@@ -66,8 +66,8 @@ def start(cerai_dir: Path = CERAI_DIR, with_sarvam_profile: bool = False,
     if r.returncode != 0:
         raise DockerError(
             f"docker compose up failed (rc={r.returncode}):\n{r.stderr}\n"
-            f"If you see a permission error, run via `sg docker -c '...'` "
-            f"or add your user to the docker group."
+            f"Permission errors usually mean the docker group isn't active "
+            f"in the current shell — wrap via `sg docker -c '...'`."
         )
     deadline = time.time() + timeout_s
     while time.time() < deadline:
