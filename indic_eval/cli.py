@@ -62,6 +62,38 @@ def _load_env_file(workspace: Path) -> None:
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+def _wipe_target_outputs(workspace: Path, target_ids: list[str]) -> None:
+    """Default fresh-run cleanup: wipe per-target inference + cerai score files
+    for the targets in this run, and prune the shared judge JSONLs of rows
+    belonging to those targets. Other targets' data is preserved. Wipes the
+    aggregate findings.json + run-metadata.json (both regenerated)."""
+    import json
+    results = workspace / "results"
+    if not results.exists():
+        return
+    for tid in target_ids:
+        (results / f"inference_{tid}.jsonl").unlink(missing_ok=True)
+        cerai_id = tid.lower().replace("-", "_")
+        (results / f"cerai_scores_{cerai_id}.jsonl").unlink(missing_ok=True)
+    target_set = set(target_ids)
+    for judge_file in ("c1_refusal_scores.jsonl", "c3_judge_scores.jsonl", "c4_bias_judge_scores.jsonl"):
+        jp = results / judge_file
+        if not jp.exists():
+            continue
+        kept = []
+        for line in jp.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                if json.loads(line).get("target") not in target_set:
+                    kept.append(line)
+            except json.JSONDecodeError:
+                pass
+        jp.write_text("\n".join(kept) + ("\n" if kept else ""))
+    (results / "findings.json").unlink(missing_ok=True)
+    (results / "run-metadata.json").unlink(missing_ok=True)
+
+
 def _build_preset(
     preset_path: Path,
     smoke: bool,
@@ -123,6 +155,11 @@ def run(
         "--no-report",
         help="Skip auto-rendering site/index.html after the run completes.",
     )] = False,
+    resume: Annotated[bool, typer.Option(
+        "--resume",
+        help="Keep existing per-target JSONLs and skip prompts already complete. "
+             "Default behaviour wipes per-target output so every run is a clean slate.",
+    )] = False,
 ):
     """Run an end-to-end audit per the preset."""
     workspace = workspace or _default_workspace()
@@ -141,6 +178,9 @@ def run(
     console.print(f"  targets: {[t.id for t in cfg.targets]}")
     console.print(f"  tracks:  ours={cfg.ours.enabled}  cerai={cfg.cerai.enabled}")
     console.print(f"  workspace: {workspace}")
+
+    if not resume:
+        _wipe_target_outputs(workspace, [t.id for t in cfg.targets])
 
     from .runner import run_all
     try:
