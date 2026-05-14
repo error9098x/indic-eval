@@ -5,7 +5,7 @@ on top of [CeRAI AIEvaluationTool](https://github.com/cerai-iitm/AIEvaluationToo
 v2.0. The reference run audits **Sarvam-30B** against **Gemma 4 26B-A4B-IT**
 as a baseline.
 
-Submission for the Gates Foundation AI Fellows Program — India 2026 (Path A).
+Submission for the Gates Foundation AI Fellows Program · India 2026 (Path A).
 
 ## Quick links
 
@@ -70,7 +70,7 @@ Standalone bootstrap (idempotent; pass `--force` to re-download the CeRAI tarbal
 ## Running a different model
 
 The preset YAML is the single config knob. To audit a different target, copy
-`presets/sarvam-30b-preset.yaml` and edit the `targets:` block — nothing else
+`presets/sarvam-30b-preset.yaml` and edit the `targets:` block. Nothing else
 in the preset is model-specific:
 
 ```yaml
@@ -88,7 +88,7 @@ targets:
 
 `judge:` (LLM judge for C1 / C3 / C4), `ours.limit_per_category` (per-category
 sample size), and `cerai.plans` (which CeRAI metrics to run) work the same
-way — see the reference preset for the full shape. Run with:
+way; see the reference preset for the full shape. Run with:
 
 ```bash
 indic-eval run --preset presets/my-custom.yaml
@@ -99,7 +99,7 @@ indic-eval run --preset presets/my-custom.yaml
 ```
 indic-eval/
 ├── indic_eval/          The Python package (CLI, runner, analysis, report, tracks)
-├── manifest/            The eval contract — 120 prompts + 18 PII probes
+├── manifest/            The eval contract, 120 prompts plus 18 PII probes
 ├── presets/             Run configs (sarvam-30b-preset.yaml ships as reference)
 ├── cerai/               7 patched CeRAI files (vendored at v2.0) + env templates
 ├── scripts/             bootstrap + manifest → CeRAI datapoints converter
